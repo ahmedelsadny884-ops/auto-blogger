@@ -1,6 +1,7 @@
 import requests
 import random
 import os
+import time
 
 # =========================
 # 🔑 CONFIG (GitHub Secrets)
@@ -11,13 +12,14 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 PEXELS_API_KEY = os.getenv("PEXELS_API_KEY")
 
 # =========================
-# 📰 اختيار الموضوع من الأقسام
+# 📰 اختيار الموضوع من كل المجالات
 # =========================
 def get_topic():
     categories = {
-        "Global News": ["latest world events", "politics", "technology breakthroughs"],
-        "Sports": ["football latest news", "basketball updates", "Olympics highlights"],
-        "Trending": ["viral news", "celebrity news", "social media trends"]
+        "Global News": ["world events", "politics", "economy", "technology", "science"],
+        "Sports": ["football", "basketball", "tennis", "Olympics", "cricket"],
+        "Entertainment": ["movies", "celebrity news", "music", "viral trends"],
+        "Trending": ["social media trends", "viral news", "internet challenges", "fashion trends"]
     }
     category = random.choice(list(categories.keys()))
     topic = random.choice(categories[category])
@@ -34,11 +36,13 @@ def generate_article(category, topic):
     }
     prompt = f"""
     Write a professional 3000-word news article about "{topic}" in the {category} category.
-    Include:
-    - A strong, SEO-optimized title
+    Requirements:
+    - SEO-optimized catchy title
     - Headings and subheadings
     - Structured paragraphs
+    - Include relevant images descriptions (AI-generated image suggestions)
     - Engaging introduction and conclusion
+    - Written in fluent English
     """
     data = {
         "model": "gpt-4o-mini",
@@ -50,9 +54,9 @@ def generate_article(category, topic):
     return result["choices"][0]["message"]["content"]
 
 # =========================
-# 🖼️ جلب أكثر من صورة
+# 🖼️ جلب صور ممتازة لكل مقال
 # =========================
-def get_images(count=3):
+def get_images(count=5):
     url = f"https://api.pexels.com/v1/search?query=news&per_page={count}"
     headers = {"Authorization": PEXELS_API_KEY}
     response = requests.get(url, headers=headers)
@@ -77,20 +81,24 @@ def publish(title, content, images):
     return response.json()
 
 # =========================
-# 🧩 تشغيل السكريبت
+# 🧩 تشغيل السكريبت – 10 مقالات يوميًا مع ساعة فاصل بين كل مقال
 # =========================
 def main():
-    category, topic = get_topic()
-    print("Category:", category)
-    print("Topic:", topic)
+    for i in range(10):
+        print(f"=== Article {i+1} / 10 ===")
+        category, topic = get_topic()
+        print("Category:", category)
+        print("Topic:", topic)
 
-    article = generate_article(category, topic)
-    title = article.split("\n")[0]  # أول سطر كعنوان
+        article = generate_article(category, topic)
+        title = article.split("\n")[0]  # أول سطر كعنوان
 
-    images = get_images(count=3)
-    result = publish(title, article, images)
+        images = get_images(count=5)  # 5 صور لكل مقال
+        result = publish(title, article, images)
 
-    print("Published:", result)
+        print("Published:", result)
+        print("Waiting 1 hour before next article...\n")
+        time.sleep(3600)  # ساعة انتظار بين المقالات
 
 if __name__ == "__main__":
     main()
